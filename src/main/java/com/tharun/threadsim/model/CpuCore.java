@@ -2,37 +2,38 @@ package com.tharun.threadsim.model;
 
 public class CpuCore {
 
-    private String coreId;
-    private ThreadModel currentThread;
+    private int id;
+    private ThreadModel runningThread;
 
-    public CpuCore(String coreId) {
-        this.coreId = coreId;
+    public CpuCore(int id) {
+        this.id = id;
     }
 
-    public String getCoreId() {
-        return coreId;
+    public void assign(ThreadModel t) {
+        this.runningThread = t;
+
+        if (t != null) {
+            t.setState(ThreadState.RUNNING);
+        }
+    }
+
+    public void execute(int time) {
+        if (runningThread != null) {
+            runningThread.execute(time);
+
+            if (runningThread.getState() == ThreadState.TERMINATED) {
+                runningThread = null;
+            }
+        }
+    }
+
+    // ✅ ADD THESE METHODS (YOUR ERROR FIX)
+
+    public int getCoreId() {
+        return id;
     }
 
     public ThreadModel getCurrentThread() {
-        return currentThread;
-    }
-
-    public void assignThread(ThreadModel thread) {
-        this.currentThread = thread;
-
-        if (thread != null) {
-            thread.setState(ThreadState.RUNNING);
-        }
-    }
-
-    public void releaseThread() {
-        if (currentThread != null) {
-            currentThread.setState(ThreadState.READY);
-        }
-        this.currentThread = null;
-    }
-
-    public boolean isIdle() {
-        return currentThread == null;
+        return runningThread;
     }
 }

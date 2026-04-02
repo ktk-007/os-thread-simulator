@@ -1,27 +1,20 @@
 package com.tharun.threadsim.model;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class ProcessModel {
 
     private String processId;
-    private List<ThreadModel> threads;
+    private List<ThreadModel> threads = new ArrayList<>();
 
     public ProcessModel(String processId) {
         this.processId = processId;
-        this.threads = new ArrayList<>();
     }
 
-    public String getProcessId() {
-        return processId;
+    public void addThread(ThreadModel t) {
+        threads.add(t);
     }
 
-    public List<ThreadModel> getThreads() {
-        return threads;
-    }
-
-    public void addThread(ThreadModel thread) {
-        threads.add(thread);
-    }
+    public String getProcessId() { return processId; }
+    public List<ThreadModel> getThreads() { return threads; }
 }

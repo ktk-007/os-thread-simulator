@@ -18,21 +18,26 @@
     </properties>
 
     <dependencies>
+
+        <!-- JavaFX Controls -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>${javafx.version}</version>
+            <version>21</version>
         </dependency>
 
+        <!-- JavaFX FXML (optional but safe) -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
-            <version>${javafx.version}</version>
+            <version>21</version>
         </dependency>
+
     </dependencies>
 
     <build>
         <plugins>
+
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
@@ -41,6 +46,7 @@
                     <mainClass>com.tharun.threadsim.app.MainApp</mainClass>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
 

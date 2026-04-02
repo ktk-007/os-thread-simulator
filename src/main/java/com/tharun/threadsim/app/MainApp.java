@@ -1,203 +1,239 @@
 package com.tharun.threadsim.app;
-import com.tharun.threadsim.engine.SimulationEngine;
-import com.tharun.threadsim.model.ProcessModel;
-import com.tharun.threadsim.model.ThreadModel;
-import com.tharun.threadsim.ui.SimulationView;
+
 import javafx.application.Application;
+import javafx.geometry.*;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.layout.StackPane;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.ToggleGroup;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-import javafx.scene.layout.Priority;
-import javafx.util.Duration;
 
 public class MainApp extends Application {
-    private SimulationEngine engine;
-    private Timeline timeline;
-    private boolean autoMode = false;
+
+    private VBox processArea = new VBox(10);
+    private HBox movementArea = new HBox(20);
+    private GridPane coreGrid = new GridPane();
+
+    private VBox panelContainer = new VBox();
+    private int activePanel = -1;
+
+    private int coreCount = 16;
+
     @Override
     public void start(Stage stage) {
-        int[] processCounter = {1};
-        engine = new SimulationEngine();
-        engine.initialize();
-        SimulationView simulationView = new SimulationView(engine);
-        Button addProcessButton = new Button("Add Process");
 
-        ListView<String> processListView = new ListView<>();
-        processListView.setPrefHeight(180);
-        processListView.setMinHeight(150);
-        VBox processBox = new VBox(10, addProcessButton, processListView);
-        VBox.setVgrow(processListView, Priority.ALWAYS);
-        addProcessButton.setOnAction(e -> {
+        String bg = "#0b0b15";
+        String panel = "#1a1a2e";
+        String border = "#6c63ff";
+        String text = "#e6f1ff";
 
-            if (engine.getProcessCount() >= 8) {
-                System.out.println("Maximum 8 processes allowed.");
-                return;
-            }
+        // ================= TOP =================
+        ComboBox<String> model = new ComboBox<>();
+        model.getItems().addAll("ONE_TO_ONE","MANY_TO_ONE","MANY_TO_MANY");
+        model.setValue("ONE_TO_ONE");
 
-            String processId = "P" + processCounter[0]++;
+        ComboBox<String> algo = new ComboBox<>();
+        algo.getItems().addAll("FCFS","SJF","PRIORITY","ROUND_ROBIN");
+        algo.setValue("FCFS");
 
-            ProcessModel process = new ProcessModel(processId);
-            engine.addProcess(process);
+        ComboBox<String> mode = new ComboBox<>();
+        mode.getItems().addAll("AUTO","MANUAL");
+        mode.setValue("AUTO");
 
-            processListView.getItems().add(processId);
+        ComboBox<Integer> cores = new ComboBox<>();
+        for(int i=1;i<=16;i++) cores.getItems().add(i);
+        cores.setValue(16);
+
+        VBox syncBox = new VBox();
+        syncBox.setPrefSize(500,260);
+        syncBox.setStyle("-fx-background-color:"+panel+";-fx-border-color:"+border);
+        // UPDATED: dynamic core + sync resize
+        cores.setOnAction(e -> {
+            coreCount = cores.getValue();
+            buildCoreGrid(panel,border,text);
+
+            double width = 600 - (coreCount * 10);
+            if(width < 250) width = 250;
+            syncBox.setPrefWidth(width);
         });
-        // ---- Thread Input ----
-        TextField threadIdField = new TextField();
-        threadIdField.setPromptText("Thread ID");
 
-        TextField burstField = new TextField();
-        burstField.setPromptText("Burst Time");
+        TextField quantum = new TextField();
+        quantum.setPromptText("Quantum");
 
-        TextField priorityField = new TextField();
-        priorityField.setPromptText("Priority");
-
-        TextField memoryField = new TextField();
-        memoryField.setPromptText("Memory");
-
-        Button addThreadButton = new Button("Add Thread");
-
-        HBox threadInputBox = new HBox(10,
-                threadIdField,
-                burstField,
-                priorityField,
-                memoryField,
-                addThreadButton
+        HBox top = new HBox(10,
+                label("Thread:",text), model,
+                label("Algo:",text), algo,
+                label("Mode:",text), mode,
+                label("Cores:",text), cores,
+                quantum,
+                new Button("Start"),
+                new Button("Step"),
+                new Button("Reset")
         );
-        addThreadButton.setOnAction(e -> {
+        top.setPadding(new Insets(10));
+        top.setStyle("-fx-background-color:"+panel);
 
-            String selectedProcessId = processListView.getSelectionModel().getSelectedItem();
-
-            if (selectedProcessId == null) {
-                System.out.println("Select a process first.");
-                return;
-            }
-
-            ProcessModel selectedProcess = null;
-
-            for (ProcessModel p : engine.getProcesses()) {
-                if (p.getProcessId().equals(selectedProcessId)) {
-                    selectedProcess = p;
-                    break;
-                }
-            }
-
-            if (selectedProcess == null) return;
-
-            if (selectedProcess.getThreads().size() >= 8) {
-                System.out.println("Maximum 8 threads per process allowed.");
-                return;
-            }
-
-            // ---- AUTO GENERATION ----
-            int threadNumber = selectedProcess.getThreads().size() + 1;
-            String threadId = selectedProcessId + "-T" + threadNumber;
-
-            int burst = 2 + (int)(Math.random() * 9);       // 2–10
-            int priority = 1 + (int)(Math.random() * 5);    // 1–5
-            int memory = 10 + (int)(Math.random() * 91);    // 10–100
-
-            ThreadModel thread = new ThreadModel(threadId, burst, priority, memory);
-
-            selectedProcess.addThread(thread);
-            engine.addThread(thread);
-
-            simulationView.refresh();
-        });
-        // ---- Mode Selection ----
-        RadioButton stepModeButton = new RadioButton("Step Mode");
-        RadioButton autoModeButton = new RadioButton("Auto Mode");
-
-        ToggleGroup modeGroup = new ToggleGroup();
-        stepModeButton.setToggleGroup(modeGroup);
-        autoModeButton.setToggleGroup(modeGroup);
-
-        stepModeButton.setSelected(true);  // default
-
-        stepModeButton.setOnAction(e -> autoMode = false);
-        autoModeButton.setOnAction(e -> autoMode = true);
-
-        // ---- Control Buttons ----
-        Button startButton = new Button("Start");
-        Button stepButton = new Button("Step");
-        Button resetButton = new Button("Reset");
-
-        // ---- Timeline (Auto Mode) ----
-        timeline = new Timeline(
-                new KeyFrame(Duration.millis(1050), e -> {
-
-                    if (!engine.isSimulationRunning()) {
-                        return;
-                    }
-
-                    engine.runOneStep();
-                    simulationView.refresh();
-
-                    if (engine.isSimulationFinished()) {
-                        timeline.stop();
-                        engine.stopSimulation();
-                        System.out.println("Simulation Finished.");
-                    }
-                })
+        // ================= LEFT =================
+        VBox left = new VBox(15,
+                new Button("Add Process"),
+                new Button("Add Thread"),
+                new Button("Terminate")
         );
-        timeline.setCycleCount(Timeline.INDEFINITE);
+        left.setPadding(new Insets(10));
+        left.setStyle("-fx-background-color:"+panel);
 
-        // ---- Button Actions ----
+        // ================= PROCESS PANEL =================
+        processArea.setPadding(new Insets(10));
+        processArea.setStyle("-fx-background-color:"+panel);
 
-        startButton.setOnAction(e -> {
-            engine.startSimulation();
+        ScrollPane processScroll = new ScrollPane(processArea);
+        processScroll.setPrefHeight(180);
 
-            if (autoMode) {
-                timeline.play();
-            }
-        });
+        // ================= THREAD MOVEMENT =================
+        movementArea.setPadding(new Insets(0));
+        movementArea.setPrefHeight(80);
 
-        stepButton.setOnAction(e -> {
+        // FIXED: real connector (no box)
+        movementArea.setStyle("-fx-background-color: transparent;");
+        movementArea.setAlignment(Pos.CENTER);
 
-            if (!engine.isSimulationRunning()) {
-                engine.startSimulation();
-            }
+        // ================= SYNC (WIDE) =================
 
-            engine.runOneStep();
-            simulationView.refresh();
-        });
 
-        resetButton.setOnAction(e -> {
-            timeline.stop();
-            engine.resetSimulation();
-            simulationView.refresh();
-        });
+        // ================= CORE CONTAINER =================
+        VBox coreContainer = new VBox();
+        coreContainer.setPadding(new Insets(10));
+        coreContainer.setStyle("-fx-border-color:"+border);
 
-        // ---- Layout ----
-        HBox modeBox = new HBox(15, stepModeButton, autoModeButton);
-        HBox controlBox = new HBox(15, startButton, stepButton, resetButton);
+        buildCoreGrid(panel,border,text);
+        coreContainer.getChildren().add(coreGrid);
 
-        VBox root = new VBox(20,
-                processBox,
-                threadInputBox,
-                modeBox,
-                controlBox,
-                simulationView
+        HBox lower = new HBox(20, syncBox, coreContainer);
+        lower.setPadding(new Insets(10));
+
+        // ================= PROCESS (TOP) =================
+        VBox processWrapper = new VBox(processScroll);
+        processWrapper.setAlignment(Pos.CENTER);
+        processWrapper.setPadding(new Insets(10));
+        processWrapper.setPrefHeight(200);
+
+        // ================= MOVEMENT CONNECTOR =================
+        HBox movementWrapper = new HBox(movementArea);
+        movementWrapper.setAlignment(Pos.CENTER);
+        movementWrapper.setPadding(new Insets(5));
+
+        // FIXED: no border / no dashed / clean connector
+        movementArea.setPrefWidth(800);
+
+        // ================= CORES (BOTTOM) =================
+        VBox coreWrapper = new VBox(lower);
+        coreWrapper.setAlignment(Pos.CENTER);
+        coreWrapper.setPadding(new Insets(10));
+
+        // ================= CENTER STACK =================
+        VBox center = new VBox(10,
+                processWrapper,
+                movementWrapper,
+                coreWrapper
         );
-        root.setStyle("-fx-padding: 20;");
 
-        Scene scene = new Scene(root, 700, 400);
+        center.setAlignment(Pos.TOP_CENTER);
 
-        stage.setTitle("Multithreading & Synchronization Simulator");
+        // ================= COLLAPSERS =================
+        Button c1 = arrow();
+        Button c2 = arrow();
+        Button c3 = arrow();
+
+        c1.setOnAction(e -> togglePanel(1));
+        c2.setOnAction(e -> togglePanel(2));
+        c3.setOnAction(e -> togglePanel(3));
+
+        VBox arrows = new VBox(40, c1, c2, c3);
+        arrows.setPadding(new Insets(10));
+
+        panelContainer.setPrefWidth(0);
+
+        HBox right = new HBox(arrows, panelContainer);
+
+        // ================= ROOT =================
+        BorderPane root = new BorderPane();
+        root.setTop(top);
+        root.setLeft(left);
+        root.setCenter(center);
+        root.setRight(right);
+        root.setStyle("-fx-background-color:"+bg);
+
+        Scene scene = new Scene(root,1400,800);
         stage.setScene(scene);
+        stage.setTitle("OS Thread Simulator");
         stage.show();
     }
 
-    public static void main(String[] args) {
+    // ================= COLLAPSER =================
+    private void togglePanel(int id){
+
+        if(activePanel == id){
+            panelContainer.setPrefWidth(0);
+            panelContainer.getChildren().clear();
+            activePanel = -1;
+            return;
+        }
+
+        activePanel = id;
+
+        panelContainer.setPrefWidth(600);
+        panelContainer.getChildren().clear();
+
+        VBox content = new VBox();
+        content.setPadding(new Insets(20));
+
+        if(id == 1) content.getChildren().add(new Label("THREAD TABLE"));
+        else if(id == 2) content.getChildren().add(new Label("KERNEL THREAD TABLE"));
+        else content.getChildren().add(new Label("WAIT / TURNAROUND"));
+
+        panelContainer.getChildren().add(content);
+    }
+
+    // ================= CORE GRID =================
+    private void buildCoreGrid(String panel,String border,String text){
+
+        coreGrid.getChildren().clear();
+        coreGrid.setHgap(20);
+        coreGrid.setVgap(20);
+
+        //
+        int cols = (int)Math.ceil(Math.sqrt(coreCount));
+
+        for(int i=0;i<coreCount;i++){
+
+            VBox cell = new VBox(5);
+            cell.setAlignment(Pos.CENTER);
+
+            Label title = label("Core " + (i+1), text);
+
+            Pane box = new Pane();
+            box.setPrefSize(120,60);
+            box.setStyle("-fx-background-color:"+panel+";-fx-border-color:"+border);
+
+            cell.getChildren().addAll(title, box);
+
+            coreGrid.add(cell, i % cols, i / cols);
+        }
+    }
+
+    private Button arrow(){
+        Button b = new Button("▶");
+        b.setStyle("-fx-font-size:18; -fx-background-color:transparent; -fx-text-fill:white;");
+        return b;
+    }
+
+    private Label label(String t,String c){
+        Label l = new Label(t);
+        l.setTextFill(Color.web(c));
+        return l;
+    }
+
+    public static void main(String[] args){
         launch();
     }
 }
