@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="OSThreadSim">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/OSThreadSim.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
