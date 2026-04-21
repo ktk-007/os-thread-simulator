@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OS Thread Simulator</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div class="ctrl-group">
+    <span class="ctrl-label">Thread model:</span>
+    <select id="thread-model">
+      <option value="many-one">Many-One</option>
+      <option value="one-one" selected>One-One</option>
+      <option value="many-many">Many-Many</option>
+    </select>
+  </div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">Scheduling:</span>
+    <select id="sched-algo">
+      <option value="FCFS">FCFS</option>
+      <option value="RR" selected>Round Robin</option>
+      <option value="SJF">SJF</option>
+      <option value="Priority">Priority</option>
+    </select>
+  </div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">Config:</span>
+    <div class="radio-group">
+      <label><input type="radio" name="config" value="Auto" checked> Auto</label>
+      <label><input type="radio" name="config" value="Manual"> Manual</label>
+    </div>
+  </div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">Sync:</span>
+    <div class="radio-group">
+      <label><input type="radio" name="sync" value="Semaphores" checked> Semaphores</label>
+      <label><input type="radio" name="sync" value="Monitors"> Monitors</label>
+    </div>
+  </div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">Cores (1-16):</span>
+    <input type="number" id="core-count" min="1" max="16" value="4">
+  </div>
+  <div class="ctrl-group" id="tq-group" style="display:none">
+    <span class="ctrl-label">Time Quantum:</span>
+    <input type="number" id="time-q" min="1" max="20" value="3">
+  </div>
+  <div class="ctrl-group" id="bt-group" style="display:none">
+    <span class="ctrl-label">Burst Time:</span>
+    <input type="number" id="burst-input" min="1" max="30" value="6">
+  </div>
+  <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+    <button class="btn primary" id="start-btn" onclick="toggleStart()">▶ Start</button>
+    <button class="btn" id="step-btn" onclick="doStep()">⏭ Step</button>
+    <button class="btn danger" onclick="resetSim()">↺ Reset</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- LEFT: Processes -->
+  <div id="left-panel">
+    <div class="panel-title">⬡ Processes</div>
+    <div id="process-list"></div>
+    <div id="add-proc-btn-wrap">
+      <button class="btn" onclick="addProcess()">＋ Add Process</button>
+    </div>
+  </div>
+
+  <!-- CENTER -->
+  <div id="center-panel">
+
+    <!-- Movement bar -->
+    <div id="movement-bar">
+      <span class="movement-label">▸ Thread Movement:</span>
+      <div id="move-items" style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;overflow:hidden;"></div>
+    </div>
+
+    <!-- Sync viz -->
+    <div id="sync-panel">
+      <div class="sync-title">⬡ Synchronization Visualizer</div>
+      <div id="sync-viz"></div>
+    </div>
+
+    <!-- Gantt chart -->
+    <div id="gantt-section">
+      <div class="gantt-title">⬡ Gantt Chart</div>
+      <div id="gantt-time"></div>
+      <div id="gantt-track"></div>
+    </div>
+
+    <!-- Cores -->
+    <div id="cores-section">
+      <div id="cores-grid" class="cores-grid"></div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: Tables -->
+  <div id="right-panel">
+
+    <!-- Table 1: Thread details + timing -->
+    <div class="table-section" style="flex:2;min-height:0;">
+      <div class="table-tabs">
+        <button class="tab-btn active" onclick="switchTab(0)" id="tab0-btn">Thread Details</button>
+        <button class="tab-btn" onclick="switchTab(1)" id="tab1-btn">Timing</button>
+      </div>
+      <div class="table-wrap" id="detail-wrap">
+        <table id="thread-table">
+          <thead>
+            <tr>
+              <th>PID</th><th>TID</th><th>Algo</th><th>Burst</th><th>TQ</th>
+              <th>Pri</th><th>Rem</th><th>Sync</th><th>Mem</th>
+            </tr>
+          </thead>
+          <tbody id="thread-tbody"></tbody>
+        </table>
+      </div>
+      <div class="table-wrap" id="timing-wrap" style="display:none;">
+        <table>
+          <thead><tr><th>PID</th><th>TID</th><th>Status</th><th>Wait</th><th>Turnaround</th></tr></thead>
+          <tbody id="timing-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Table 2: Status -->
+    <div class="table-section" style="flex:1;min-height:0;">
+      <div class="panel-title" style="font-size:13px;padding:6px 10px;">Thread Status</div>
+      <div class="table-wrap">
+        <table><thead><tr><th>PID</th><th>TID</th><th>Core</th><th>KThread</th><th>Status</th></tr></thead>
+        <tbody id="status-tbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- Table 3: Kernel thread map -->
+    <div class="table-section" style="flex:1;min-height:0;">
+      <div class="panel-title" style="font-size:13px;padding:6px 10px;">Kernel Thread Map</div>
+      <div id="kthread-wrap"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div id="statusbar">
+  <div class="stat-item"><div class="tick-dot" id="tick-dot"></div><span>Tick</span></div>
+  <div class="stat-item">Clock: <span class="stat-val" id="clock">0</span></div>
+  <div class="stat-item">Procs: <span class="stat-val" id="stat-procs">0</span></div>
+  <div class="stat-item">Threads: <span class="stat-val" id="stat-threads">0</span></div>
+  <div class="stat-item">Running: <span class="stat-val green" id="stat-running">0</span></div>
+  <div class="stat-item">Waiting: <span class="stat-val yellow" id="stat-waiting">0</span></div>
+  <div class="stat-item">Done: <span class="stat-val red" id="stat-done">0</span></div>
+  <div style="margin-left:auto;" class="stat-item"><span id="mode-disp">—</span></div>
+</div>
+
+<!-- FOOTER -->
+<div id="footer">© 2025 Thread Management Simulator | OS Project</div>
+
+<script src="script.js"></script>
+</body>
+</html>
