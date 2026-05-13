@@ -28,10 +28,10 @@ public class CustomTitleBar extends JPanel {
         setBackground(Theme.BG2);
         setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Theme.BORDER));
         setLayout(new BorderLayout());
-        setPreferredSize(new Dimension(0, 36));
+        setPreferredSize(new Dimension(0, 50));
 
         // ---- Left: app icon + title ----
-        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 15));
         left.setOpaque(false);
 
         // Coloured dot acting as a simple logo
@@ -41,7 +41,7 @@ public class CustomTitleBar extends JPanel {
         left.add(logo);
 
         JLabel title = new JLabel("RTOS ThreadVision (Thread Simulator)");
-        title.setFont(new Font("Tahoma", Font.BOLD, 13));
+        title.setFont(new Font("Tahoma", Font.BOLD, 18));
         title.setForeground(Theme.TEXT);
         left.add(title);
 
@@ -108,12 +108,12 @@ public class CustomTitleBar extends JPanel {
             super(text);
             this.hoverBg = hoverBg;
             setForeground(fg);
-            setFont(new Font("Segoe UI Symbol", Font.PLAIN, 13));
+            setFont(new Font("Segoe UI Symbol", Font.BOLD, 11));
             setFocusPainted(false);
             setContentAreaFilled(false);
             setBorderPainted(false);
             setOpaque(false);
-            setPreferredSize(new Dimension(46, 36));
+            setPreferredSize(new Dimension(60, 60));
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         }
 
