@@ -37,18 +37,18 @@ public class TopBarPanel extends JPanel {
         setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, Theme.BORDER));
         // Fixed height removed to prevent cutoff
         setLayout(new BorderLayout());
-        setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10)); // Add some padding
+        setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5)); // Add some padding
         build();
     }
 
     private void build() {
-        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 15));
         left.setOpaque(false);
 
         // Thread model
         left.add(lbl("Thread model:"));
         threadModelCombo = UIUtils.darkCombo(new String[]{"One-One", "Many-One", "Many-Many"});
-        threadModelCombo.setPreferredSize(new Dimension(115, 28));
+        threadModelCombo.setPreferredSize(new Dimension(100, 28));
         threadModelCombo.addActionListener(e -> applyConfig());
         left.add(threadModelCombo);
 
@@ -58,7 +58,7 @@ public class TopBarPanel extends JPanel {
         left.add(lbl("Scheduling:"));
         algoCombo = UIUtils.darkCombo(new String[]{"FCFS", "Round Robin", "SJF", "Priority"});
         algoCombo.setSelectedIndex(1);
-        algoCombo.setPreferredSize(new Dimension(120, 28));
+        algoCombo.setPreferredSize(new Dimension(105, 28));
         algoCombo.addActionListener(e -> applyConfig());
         left.add(algoCombo);
 
@@ -71,7 +71,13 @@ public class TopBarPanel extends JPanel {
         ButtonGroup cg = new ButtonGroup(); cg.add(autoBtn); cg.add(manualBtn);
         autoBtn.addActionListener(e -> applyConfig());
         manualBtn.addActionListener(e -> applyConfig());
-        left.add(autoBtn); left.add(manualBtn);
+        JPanel configPanel= new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        configPanel.setOpaque(false);
+        configPanel.add(autoBtn);
+        configPanel.add(manualBtn);
+
+        left.add(configPanel);
+
 
         sep(left);
 
@@ -82,14 +88,19 @@ public class TopBarPanel extends JPanel {
         ButtonGroup sg = new ButtonGroup(); sg.add(semBtn); sg.add(monBtn);
         semBtn.addActionListener(e -> applyConfig());
         monBtn.addActionListener(e -> applyConfig());
-        left.add(semBtn); left.add(monBtn);
+        JPanel syncPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        syncPanel.setOpaque(false);
+        syncPanel.add(semBtn);
+        syncPanel.add(monBtn);
+
+        left.add(syncPanel);
 
         sep(left);
 
         // Cores
         left.add(lbl("CPU Cores:"));
         coreSpinner = UIUtils.darkSpinner(4, 1, 16);
-        coreSpinner.setPreferredSize(new Dimension(62, 28));
+        coreSpinner.setPreferredSize(new Dimension(45, 28));
         coreSpinner.addChangeListener(e -> applyConfig());
         left.add(coreSpinner);
 
@@ -99,7 +110,7 @@ public class TopBarPanel extends JPanel {
         tqLabel = lbl("Time Quantum:");
         left.add(tqLabel);
         tqSpinner = UIUtils.darkSpinner(3, 1, 20);
-        tqSpinner.setPreferredSize(new Dimension(58, 28));
+        tqSpinner.setPreferredSize(new Dimension(45, 28));
         tqSpinner.addChangeListener(e -> applyConfig());
         left.add(tqSpinner);
 
@@ -107,12 +118,12 @@ public class TopBarPanel extends JPanel {
         burstLabel = lbl("Burst Time:");
         left.add(burstLabel);
         burstSpinner = UIUtils.darkSpinner(5, 1, 30);
-        burstSpinner.setPreferredSize(new Dimension(58, 28));
+        burstSpinner.setPreferredSize(new Dimension(45, 28));
         burstSpinner.addChangeListener(e -> applyConfig());
         left.add(burstSpinner);
 
         // Action buttons (right-aligned)
-        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 10));
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 10));
         right.setOpaque(false);
 
         startBtn = UIUtils.makeButton("Start", Theme.ACCENT, Theme.ACCENT);
