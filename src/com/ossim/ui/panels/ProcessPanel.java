@@ -151,13 +151,13 @@ public class ProcessPanel extends JPanel {
 
         JButton addT = UIUtils.makeButton("+ Thread", Theme.BORDER2, Theme.TEXT);
         addT.setFont(Theme.LABEL_SM);
-        addT.setPreferredSize(new Dimension(78, 24));
+        addT.setPreferredSize(new Dimension(95, 24));
         addT.addActionListener(e -> { if (listener != null) listener.onAddThread(proc.getPid()); });
         actions.add(addT);
 
         JButton term = UIUtils.makeButton("Kill", Theme.RED, Theme.RED);
         term.setFont(Theme.LABEL_SM);
-        term.setPreferredSize(new Dimension(56, 24));
+        term.setPreferredSize(new Dimension(60, 24));
         term.addActionListener(e -> { if (listener != null) listener.onTerminate(proc.getPid()); });
         actions.add(term);
 
