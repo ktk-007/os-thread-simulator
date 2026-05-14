@@ -18,8 +18,8 @@ This project acts as a **glass-box visualizer** for understanding complex operat
 - [Architectural Philosophy](#architectural-philosophy)
 - [Project Structure](#project-structure)
 - [Java File Inventory](#java-file-inventory)
-- [Installation & Setup](#installation--setup)
-- [Running the Project](#running-the-project)
+- [Installation and Setup](#installation-and-setup)
+- [Run the Project](#run-the-project)
 - [User Guide](#user-guide)
 - [Screenshots](#screenshots)
 - [Contributions](#contributions)
@@ -201,7 +201,7 @@ src/com/ossim/
 
 ---
 
-# Quick Start
+# Installation and Setup
 
 ## Prerequisites
 
