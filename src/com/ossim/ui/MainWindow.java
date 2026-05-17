@@ -1,14 +1,17 @@
 package com.ossim.ui;
 
 import com.ossim.model.MoveEvent;
+import com.ossim.model.SimThread;
 import com.ossim.scheduler.SimEngine;
 import com.ossim.ui.panels.*;
-
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.util.List;
+import java.util.*;
+import javax.swing.*;
+
+
+
 
 public class MainWindow extends JFrame {
 
@@ -25,15 +28,15 @@ public class MainWindow extends JFrame {
     private JSplitPane      mainSplit;
     private JSplitPane      leftSplit;
 
-    private Timer autoTimer;
+    private javax.swing.Timer autoTimer;
 
-    // Slower tick: 1000ms auto, 800ms step animation
+    
     private static final int AUTO_DELAY = 1000;
 
     public MainWindow() {
         super("RTOS ThreadVision (Thread Simulator)");
         UIUtils.applyDarkLook();
-        setUndecorated(true);           // remove OS native title bar
+        setUndecorated(true);          
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(1460, 900);
         setMinimumSize(new Dimension(1240, 700));
@@ -47,28 +50,28 @@ public class MainWindow extends JFrame {
     private void build() {
         setLayout(new BorderLayout());
 
-        // ---- CUSTOM TITLE BAR ----
+       
         CustomTitleBar titleBar = new CustomTitleBar(this);
 
-        // ---- CONFIG BAR ----
+     
         topBar = new TopBarPanel(engine, new TopBarPanel.TopBarListener() {
             @Override public void onStart()         { handleStartPause(); }
             @Override public void onStep()          { doStep(); }
             @Override public void onConfigChanged() { refresh(); }
         });
 
-        // Stack title bar + config bar in a single NORTH wrapper
+       
         JPanel northWrapper = new JPanel(new BorderLayout());
         northWrapper.setBackground(Theme.BG);
         northWrapper.add(titleBar, BorderLayout.NORTH);
         northWrapper.add(topBar,   BorderLayout.CENTER);
         add(northWrapper, BorderLayout.NORTH);
 
-        // ---- STATUS BAR ----
+       
         statusBar = new StatusBar(engine);
         add(statusBar, BorderLayout.SOUTH);
 
-        // ---- LEFT PANEL ----
+       
         processPanel = new ProcessPanel(engine);
         processPanel.setListener(new ProcessPanel.ProcessPanelListener() {
             @Override public void onAddProcess()          { engine.addProcess(); refresh(); }
@@ -92,12 +95,12 @@ public class MainWindow extends JFrame {
         syncAndCores.add(coresPanel, BorderLayout.CENTER);
         centerPanel.add(syncAndCores, BorderLayout.CENTER);
 
-        // ---- RIGHT PANEL (wider) ----
+        
         rightTables = new RightTablesPanel(engine);
         rightTables.setMinimumSize(new Dimension(300, 0));
         rightTables.setPreferredSize(new Dimension(500, 0));
 
-        // ---- SPLITS ----
+        
         leftSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, processPanel, centerPanel);
         leftSplit.setDividerSize(4);
         leftSplit.setDividerLocation(250);
@@ -122,13 +125,13 @@ public class MainWindow extends JFrame {
             }
         });
 
-        // ---- AUTO TIMER (slower) ----
-        autoTimer = new Timer(AUTO_DELAY, e -> doStep());
+        
+        autoTimer = new javax.swing.Timer(AUTO_DELAY, e -> doStep());
         autoTimer.setRepeats(true);
 
-        // ---- ENGINE LISTENER ----
+        
         engine.setListener(new SimEngine.SimListener() {
-            @Override public void onTick(int clock, List<MoveEvent> events) {
+            @Override public void onTick(int clock, java.util.List<MoveEvent> events) {
                 SwingUtilities.invokeLater(() -> {
                     movementBar.addEvents(events);
                     refresh();
@@ -140,17 +143,62 @@ public class MainWindow extends JFrame {
                         autoTimer.stop();
                         topBar.resetStartState();
                     }
+
+
+                    
+                    java.util.List<MoveEvent> moveHistory = new ArrayList<>(engine.getMoveHistory());
+                    Map<String, String> finalCoreIds = extractFinalCoreIds(engine);
+                    topBar.setExportSnapshot(moveHistory, finalCoreIds, engine);
+                    topBar.getExportButton().setEnabled(true);
                     JOptionPane.showMessageDialog(MainWindow.this,
                         "<html><b>Simulation Complete</b><br>All threads have finished execution.<br>Clock: "
                             + engine.getClock() + " ticks</html>",
                         "Simulation Complete", JOptionPane.INFORMATION_MESSAGE);
                 });
             }
+
+
+            
+            private Map<String, String> extractFinalCoreIds(SimEngine engine) {
+                Map<String, String> finalCores = new HashMap<>();
+                
+                for (SimThread t : engine.allThreads()) {
+                    String core = String.valueOf(t.getAssignedCore());
+                    finalCores.put(t.getTid(), core != null ? core : "");
+                }
+
+
+                
+                
+                java.util.List<MoveEvent> history = engine.getMoveHistory();
+                if (history != null && !history.isEmpty()) {
+                    java.util.Set<String> knownStates = new java.util.HashSet<>(java.util.Arrays.asList(
+                        "Ready", "Running", "Waiting", "Blocked", "Done", "Created", "Terminated"
+                    ));
+                    
+                    for (MoveEvent event : history) {
+                        String tid = event.tid;
+                        if ((finalCores.get(tid) == null || finalCores.get(tid).isEmpty())) {
+                            
+                            if (!knownStates.contains(event.to) && event.to != null && !event.to.isEmpty()) {
+                                finalCores.put(tid, event.to);
+                            }
+                           
+                            else if (!knownStates.contains(event.from) && event.from != null && !event.from.isEmpty()) {
+                                finalCores.put(tid, event.from);
+                            }
+                        }
+                    }
+                }
+                
+                return finalCores;
+            }
         });
     }
 
     private void handleStartPause() {
         if (topBar.isStarted()) {
+            topBar.getExportButton().setEnabled(false);
             autoTimer.start();
         } else {
             autoTimer.stop();
@@ -159,12 +207,12 @@ public class MainWindow extends JFrame {
 
     private void doStep() {
         engine.tick();
-        // Engine listener calls refresh via onTick
     }
 
     private void doReset() {
         autoTimer.stop();
         movementBar.clear();
+        topBar.getExportButton().setEnabled(false);
         engine.init();
         refresh();
     }

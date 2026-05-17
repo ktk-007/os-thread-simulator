@@ -33,6 +33,9 @@ public class Theme {
         return new Color(c.getRed(), c.getGreen(), c.getBlue(), Math.max(0, Math.min(255, alpha)));
     }
 
+
+    
+
     public static Color statusColor(String status) {
         if (status == null) return TEXT2;
         switch (status.toUpperCase()) {
