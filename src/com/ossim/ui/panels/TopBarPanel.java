@@ -4,10 +4,11 @@ import com.ossim.model.*;
 import com.ossim.scheduler.SimEngine;
 import com.ossim.ui.Theme;
 import com.ossim.ui.UIUtils;
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
+import com.ossim.util.SimulationExporter;
 import java.awt.*;
+import java.io.File;
+import java.util.*;
+import javax.swing.*;
 
 public class TopBarPanel extends JPanel {
 
@@ -28,16 +29,20 @@ public class TopBarPanel extends JPanel {
     private JLabel tqLabel, tqSpin, burstLabel, burstSpin;
     public  UIUtils.OutlinedButton startBtn;
     public  UIUtils.OutlinedButton stepBtn;
+    public  UIUtils.OutlinedButton exportBtn;
     private boolean started = false;
+
+    private java.util.List<MoveEvent> snapshotMoveHistory;
+    private Map<String, String> snapshotFinalCoreIds;
+    private SimEngine snapshotEngine;
 
     public TopBarPanel(SimEngine engine, TopBarListener listener) {
         this.engine   = engine;
         this.listener = listener;
         setBackground(Theme.BG2);
         setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, Theme.BORDER));
-        // Fixed height removed to prevent cutoff
         setLayout(new BorderLayout());
-        setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10)); // Add some padding
+        setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
         build();
     }
 
@@ -45,7 +50,7 @@ public class TopBarPanel extends JPanel {
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
         left.setOpaque(false);
 
-        // Thread model
+       
         left.add(lbl("Thread model:"));
         threadModelCombo = UIUtils.darkCombo(new String[]{"One-One", "Many-One", "Many-Many"});
         threadModelCombo.setPreferredSize(new Dimension(115, 28));
@@ -54,7 +59,6 @@ public class TopBarPanel extends JPanel {
 
         sep(left);
 
-        // Scheduling
         left.add(lbl("Scheduling:"));
         algoCombo = UIUtils.darkCombo(new String[]{"FCFS", "Round Robin", "SJF", "Priority"});
         algoCombo.setSelectedIndex(1);
@@ -64,7 +68,7 @@ public class TopBarPanel extends JPanel {
 
         sep(left);
 
-        // Config mode
+     
         left.add(lbl("Config:"));
         autoBtn   = radio("Auto",   true);
         manualBtn = radio("Manual", false);
@@ -75,7 +79,6 @@ public class TopBarPanel extends JPanel {
 
         sep(left);
 
-        // Sync model
         left.add(lbl("Sync:"));
         semBtn = radio("Semaphores", true);
         monBtn = radio("Monitors",   false);
@@ -86,7 +89,6 @@ public class TopBarPanel extends JPanel {
 
         sep(left);
 
-        // Cores
         left.add(lbl("CPU Cores:"));
         coreSpinner = UIUtils.darkSpinner(4, 1, 16);
         coreSpinner.setPreferredSize(new Dimension(62, 28));
@@ -95,7 +97,7 @@ public class TopBarPanel extends JPanel {
 
         sep(left);
 
-        // Time quantum
+       
         tqLabel = lbl("Time Quantum:");
         left.add(tqLabel);
         tqSpinner = UIUtils.darkSpinner(3, 1, 20);
@@ -103,7 +105,7 @@ public class TopBarPanel extends JPanel {
         tqSpinner.addChangeListener(e -> applyConfig());
         left.add(tqSpinner);
 
-        // Burst (manual mode only)
+        
         burstLabel = lbl("Burst Time:");
         left.add(burstLabel);
         burstSpinner = UIUtils.darkSpinner(5, 1, 30);
@@ -111,7 +113,7 @@ public class TopBarPanel extends JPanel {
         burstSpinner.addChangeListener(e -> applyConfig());
         left.add(burstSpinner);
 
-        // Action buttons (right-aligned)
+        
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 10));
         right.setOpaque(false);
 
@@ -122,8 +124,14 @@ public class TopBarPanel extends JPanel {
 
         stepBtn = UIUtils.makeButton("Step", Theme.BORDER2, Theme.TEXT);
         stepBtn.setPreferredSize(new Dimension(80, 34));
-        stepBtn.addActionListener(e -> listener.onStep());
+        stepBtn.addActionListener(e -> { if (listener != null) listener.onStep(); });
         right.add(stepBtn);
+
+        exportBtn = UIUtils.makeButton("Export", Theme.GREEN, Theme.GREEN);
+        exportBtn.setPreferredSize(new Dimension(80, 34));
+        exportBtn.setEnabled(false);
+        exportBtn.addActionListener(e -> handleExportClick());
+        right.add(exportBtn);
 
         add(left, BorderLayout.CENTER);
         add(right, BorderLayout.EAST);
@@ -207,5 +215,62 @@ public class TopBarPanel extends JPanel {
         s.setPreferredSize(new Dimension(1, 24));
         s.setForeground(Theme.BORDER2);
         into.add(s);
+    }
+
+    
+    public void setExportSnapshot(java.util.List<MoveEvent> moveHistory, Map<String, String> finalCoreIds, SimEngine engine) {
+        this.snapshotMoveHistory = moveHistory;
+        this.snapshotFinalCoreIds = finalCoreIds;
+        this.snapshotEngine = engine;
+    }
+
+    
+    private void handleExportClick() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        chooser.setDialogTitle("Save Simulation Results as CSV");
+
+        String defaultName = generateDefaultFilename();
+        chooser.setSelectedFile(new File(defaultName));
+
+        int returnVal = chooser.showSaveDialog(this);
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = chooser.getSelectedFile();
+            
+            
+            String filename = selectedFile.getAbsolutePath();
+            if (!filename.toLowerCase().endsWith(".csv")) {
+                filename += ".csv";
+                selectedFile = new File(filename);
+            }
+
+           
+            boolean success = SimulationExporter.exportToCSV(
+                snapshotEngine, selectedFile, snapshotMoveHistory, snapshotFinalCoreIds);
+
+            if (success) {
+                JOptionPane.showMessageDialog(this,
+                    "<html><b>Export Successful!</b><br>CSV file saved to:<br>" + 
+                    selectedFile.getAbsolutePath() + "</html>",
+                    "Export Complete", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this,
+                    "<html><b>Export Failed!</b><br>Check file permissions and disk space.</html>",
+                    "Export Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    
+    private String generateDefaultFilename() {
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.time.format.DateTimeFormatter formatter = 
+            java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+        return "ossim_results_" + now.format(formatter) + ".csv";
+    }
+
+    
+    public JButton getExportButton() {
+        return exportBtn;
     }
 }

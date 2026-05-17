@@ -3,10 +3,13 @@ package com.ossim.ui.panels;
 import com.ossim.model.ThreadStatus;
 import com.ossim.scheduler.SimEngine;
 import com.ossim.ui.Theme;
-
+import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.*;
-import java.awt.*;
+
+
+
+
 
 public class StatusBar extends JPanel {
 
@@ -68,6 +71,9 @@ public class StatusBar extends JPanel {
         tickTimer.setRepeats(false);
     }
 
+
+
+
     public void refresh() {
         var all = engine.allThreads();
         clockLabel.setText(String.valueOf(engine.getClock()));
@@ -83,6 +89,10 @@ public class StatusBar extends JPanel {
         tickDot.repaint();
         tickTimer.restart();
     }
+
+
+
+    
 
     private JPanel statItem(String labelText, JLabel val) {
         JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
