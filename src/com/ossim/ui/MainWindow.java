@@ -75,6 +75,7 @@ public class MainWindow extends JFrame {
             @Override public void onAddThread(String pid) { engine.addThread(pid); refresh(); }
             @Override public void onTerminate(String pid) { engine.terminateProcess(pid); refresh(); }
             @Override public void onReset()               { doReset(); }
+            @Override public void onColorChanged()        { refresh(); }
         });
 
         // ---- CENTER ----

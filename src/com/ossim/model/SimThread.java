@@ -7,7 +7,7 @@ public class SimThread {
 
     private final String tid;
     private final String pid;
-    private final Color color;
+    private Color color;
 
     private int burstTime;
     private int remainingTime;
@@ -50,6 +50,7 @@ public class SimThread {
     public String getTid() { return tid; }
     public String getPid() { return pid; }
     public Color getColor() { return color; }
+    public void setColor(Color color) { this.color = color; }
     public int getBurstTime() { return burstTime; }
     public int getRemainingTime() { return remainingTime; }
     public int getPriority() { return priority; }
