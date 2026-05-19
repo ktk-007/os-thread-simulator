@@ -17,6 +17,7 @@ public class ProcessPanel extends JPanel {
         void onAddThread(String pid);
         void onTerminate(String pid);
         void onReset();
+        void onColorChanged();
     }
 
     private final SimEngine engine;
@@ -132,6 +133,9 @@ public class ProcessPanel extends JPanel {
         JPanel threadArea = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 3));
         threadArea.setBackground(Theme.BG2);
         for (SimThread t : proc.getThreads()) {
+            JPanel tBox = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+            tBox.setOpaque(false);
+
             String st = threadStatusAbbrev(t.getStatus());
             Color fg = Theme.statusColor(t.getStatus().getLabel());
             JLabel pill = new JLabel(t.getTid() + " " + st);
@@ -140,7 +144,34 @@ public class ProcessPanel extends JPanel {
             pill.setOpaque(true);
             pill.setBackground(Theme.withAlpha(fg, 30));
             pill.setBorder(new EmptyBorder(2, 5, 2, 5));
-            threadArea.add(pill);
+            tBox.add(pill);
+
+            JPanel spacer = new JPanel();
+            spacer.setOpaque(false);
+            spacer.setPreferredSize(new Dimension(2, 12));
+            tBox.add(spacer);
+
+            JButton colBtn = new JButton();
+            colBtn.setPreferredSize(new Dimension(14, 14));
+            colBtn.setBackground(t.getColor());
+            colBtn.setBorder(BorderFactory.createLineBorder(Theme.BORDER));
+            colBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            colBtn.setToolTipText("Change color for " + t.getTid());
+            colBtn.addActionListener(e -> {
+                Color c = JColorChooser.showDialog(ProcessPanel.this, "Choose Color for " + t.getTid(), t.getColor());
+                if (c != null) {
+                    t.setColor(c);
+                    if (listener != null) listener.onColorChanged();
+                }
+            });
+            tBox.add(colBtn);
+
+            JPanel pillWrapper = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+            pillWrapper.setOpaque(false);
+            pillWrapper.add(tBox);
+            pillWrapper.setBorder(new EmptyBorder(0, 0, 0, 4));
+
+            threadArea.add(pillWrapper);
         }
         panel.add(threadArea, BorderLayout.CENTER);
 
